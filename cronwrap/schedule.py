@@ -11,6 +11,14 @@ _FIELD_RE = re.compile(
     r"^(\*|\*/[1-9]\d*|[0-9]{1,2}(-[0-9]{1,2})?(,[0-9]{1,2}(-[0-9]{1,2})?)*)$"
 )
 
+_FIELD_RANGES = {
+    "minute": (0, 59),
+    "hour": (0, 23),
+    "day_of_month": (1, 31),
+    "month": (1, 12),
+    "day_of_week": (0, 7),
+}
+
 
 @dataclass
 class CronExpression:
@@ -38,6 +46,18 @@ class CronExpression:
         return "cron(" + ", ".join(parts) + ")" if parts else "every minute"
 
 
+def _check_field_range(name: str, value: str) -> None:
+    """Raise ValueError if numeric values in a field exceed allowed range."""
+    lo, hi = _FIELD_RANGES[name]
+    # Extract all numeric tokens from the value
+    for token in re.findall(r"[0-9]+", value):
+        n = int(token)
+        if not (lo <= n <= hi):
+            raise ValueError(
+                f"Cron field '{name}' value {n} out of range [{lo}, {hi}]"
+            )
+
+
 def parse_cron(expression: str) -> CronExpression:
     """Parse and validate a 5-field cron expression."""
     fields = expression.strip().split()
@@ -48,6 +68,7 @@ def parse_cron(expression: str) -> CronExpression:
     for name, value in zip(CRON_FIELDS, fields):
         if not _FIELD_RE.match(value):
             raise ValueError(f"Invalid cron field '{name}': {value!r}")
+        _check_field_range(name, value)
     return CronExpression(raw=expression, minute=fields[0], hour=fields[1],
                           day_of_month=fields[2], month=fields[3],
                           day_of_week=fields[4])
