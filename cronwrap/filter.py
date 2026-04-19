@@ -14,7 +14,13 @@ class FilterConfig:
 
 
 def _compile(patterns: List[str]) -> List[re.Pattern]:
-    return [re.compile(p) for p in patterns]
+    compiled = []
+    for p in patterns:
+        try:
+            compiled.append(re.compile(p))
+        except re.error as e:
+            raise ValueError(f"Invalid suppress pattern {p!r}: {e}") from e
+    return compiled
 
 
 def filter_lines(text: str, config: FilterConfig) -> str:
