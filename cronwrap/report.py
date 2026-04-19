@@ -1,42 +1,36 @@
-"""Human-readable summary report from ExecutionMetrics."""
+"""Human-readable report formatting for cronwrap run results."""
 from __future__ import annotations
 
-import datetime
 from typing import Optional
 
 from cronwrap.metrics import ExecutionMetrics
 
 
-STATUS_OK = "OK"
-STATUS_FAIL = "FAIL"
+SEP = "-" * 60
 
 
-def format_report(metrics: ExecutionMetrics, label: Optional[str] = None) -> str:
-    """Return a multi-line plain-text report for *metrics*."""
-    status = STATUS_OK if metrics.succeeded else STATUS_FAIL
-    started = datetime.datetime.utcfromtimestamp(metrics.started_at).strftime(
-        "%Y-%m-%d %H:%M:%S UTC"
-    )
+def format_report(metrics: ExecutionMetrics, job_name: Optional[str] = None) -> str:
+    """Return a formatted multi-line string summarising an execution."""
+    name_line = f"Job      : {job_name}" if job_name else "Job      : (unnamed)"
+    status = "SUCCESS" if metrics.succeeded else "FAILURE"
     lines = [
-        "=" * 52,
-        f"  cronwrap execution report{(' — ' + label) if label else ''}",
-        "=" * 52,
-        f"  Status    : {status}",
-        f"  Command   : {metrics.command}",
-        f"  Started   : {started}",
-        f"  Duration  : {metrics.duration_seconds:.3f}s",
-        f"  Exit code : {metrics.exit_code}",
-        f"  Attempts  : {metrics.attempts}",
-        f"  Stdout    : {metrics.stdout_bytes} bytes",
-        f"  Stderr    : {metrics.stderr_bytes} bytes",
+        SEP,
+        name_line,
+        f"Status   : {status}",
+        f"Exit code: {metrics.exit_code}",
+        f"Duration : {metrics.duration_seconds:.3f}s",
+        f"Attempt  : {metrics.attempt}",
+        f"Stdout   : {metrics.stdout_bytes} bytes",
+        f"Stderr   : {metrics.stderr_bytes} bytes",
     ]
-    if metrics.extra:
-        lines.append("  Extra     :")
-        for k, v in metrics.extra.items():
-            lines.append(f"    {k}: {v}")
-    lines.append("=" * 52)
+    if metrics.stdout_bytes and metrics.stdout_tail:
+        lines.append(f"Output   :\n{metrics.stdout_tail.rstrip()}")
+    if metrics.stderr_bytes and metrics.stderr_tail:
+        lines.append(f"Errors   :\n{metrics.stderr_tail.rstrip()}")
+    lines.append(SEP)
     return "\n".join(lines)
 
 
-def print_report(metrics: ExecutionMetrics, label: Optional[str] = None) -> None:
-    print(format_report(metrics, label=label))
+def print_report(metrics: ExecutionMetrics, job_name: Optional[str] = None) -> None:
+    """Print the formatted report to stdout."""
+    print(format_report(metrics, job_name))
