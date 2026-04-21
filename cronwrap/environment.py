@@ -40,3 +40,21 @@ def capture_env(include_vars: Optional[List[str]] = None) -> EnvSnapshot:
 def check_required_vars(names: List[str]) -> List[str]:
     """Return names of required env vars that are missing."""
     return [n for n in names if not os.environ.get(n)]
+
+
+def assert_required_vars(names: List[str]) -> None:
+    """Raise a ``RuntimeError`` if any required env vars are missing.
+
+    Args:
+        names: env-var names that must be set and non-empty.
+
+    Raises:
+        RuntimeError: listing every missing variable so the caller can
+                      diagnose all problems at once rather than one at a time.
+    """
+    missing = check_required_vars(names)
+    if missing:
+        raise RuntimeError(
+            "Missing required environment variable(s): "
+            + ", ".join(missing)
+        )
