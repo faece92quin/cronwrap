@@ -31,6 +31,17 @@ def build_audit_parser(parent: argparse.ArgumentParser | None = None) -> argpars
     return p
 
 
+def _format_list_entry(e: dict) -> str:
+    """Format a single audit entry as a human-readable line."""
+    status = "OK" if e.get("succeeded") else "FAIL"
+    ts = e.get("started_at", "")[:19]  # trim to YYYY-MM-DDTHH:MM:SS if present
+    ts_part = f"  ts={ts}" if ts else ""
+    return (
+        f"{e['job_name']:20s}  {status}  exit={e['exit_code']}"
+        f"  dur={e.get('duration', 0):.2f}s{ts_part}"
+    )
+
+
 def run_audit_cli(args: argparse.Namespace) -> int:
     cmd = args.audit_cmd
 
@@ -40,8 +51,7 @@ def run_audit_cli(args: argparse.Namespace) -> int:
             print(json.dumps(entries, indent=2))
         else:
             for e in entries:
-                status = "OK" if e.get("succeeded") else "FAIL"
-                print(f"{e['job_name']:20s}  {status}  exit={e['exit_code']}  dur={e.get('duration', 0):.2f}s")
+                print(_format_list_entry(e))
         return 0
 
     if cmd == "report":
