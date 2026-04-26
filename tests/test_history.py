@@ -64,6 +64,15 @@ def test_compute_summary_stats(hdir):
     assert s["avg_duration"] == round(2.0, 4)
 
 
+def test_compute_summary_min_max_duration(hdir):
+    """min_duration and max_duration should reflect the shortest and longest runs."""
+    for code, dur in [(0, 1.0), (0, 3.0), (1, 2.0)]:
+        record_run("j", exit_code=code, duration=dur, history_dir=hdir)
+    s = compute_summary("j", hdir)
+    assert s["min_duration"] == 1.0
+    assert s["max_duration"] == 3.0
+
+
 def test_format_summary_no_history(hdir):
     out = format_summary(compute_summary("none", hdir))
     assert "No history" in out
