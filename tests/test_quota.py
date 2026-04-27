@@ -80,3 +80,13 @@ def test_parse_quota_returns_config() -> None:
     assert cfg is not None
     assert cfg.max_runs == 5
     assert cfg.window_seconds == 3600
+
+
+def test_different_jobs_have_independent_quotas(sdir: str) -> None:
+    """Quota state for one job must not affect a different job."""
+    cfg = _cfg(sdir, max_runs=1)
+    check_quota(cfg, "job_a", now=1000.0)
+    # job_a is now at its limit, but job_b should be unaffected
+    check_quota(cfg, "job_b", now=1000.0)
+    with pytest.raises(QuotaExceeded):
+        check_quota(cfg, "job_a", now=1001.0)
