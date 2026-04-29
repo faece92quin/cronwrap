@@ -47,3 +47,9 @@ def test_different_jobs_independent(sdir):
     check_cooldown("job_a", cooldown_seconds=60, state_dir=sdir, now=BASE)
     # job_b has no cooldown yet
     check_cooldown("job_b", cooldown_seconds=60, state_dir=sdir, now=BASE + 5)
+
+
+def test_run_exactly_at_cooldown_boundary_allowed(sdir):
+    """A run at exactly cooldown_seconds after the last run should be permitted."""
+    check_cooldown("job", cooldown_seconds=30, state_dir=sdir, now=BASE)
+    check_cooldown("job", cooldown_seconds=30, state_dir=sdir, now=BASE + 30)
